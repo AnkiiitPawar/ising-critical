@@ -1,0 +1,33 @@
+cmake_minimum_required(VERSION 3.16)
+project(ising_critical LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+if(MSVC)
+  add_compile_options(/W4 /permissive-)
+else()
+  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wno-sign-conversion)
+endif()
+
+add_library(ising INTERFACE)
+target_include_directories(ising INTERFACE include)
+
+add_executable(ising-run src/ising_run.cpp)
+target_link_libraries(ising-run PRIVATE ising)
+
+foreach(exp thermodynamics binder scaling dynamics snapshots)
+  add_executable(${exp} experiments/${exp}.cpp)
+  target_link_libraries(${exp} PRIVATE ising)
+endforeach()
+
+enable_testing()
+foreach(t test_exact test_monte_carlo test_stats)
+  add_executable(${t} tests/${t}.cpp)
+  target_link_libraries(${t} PRIVATE ising)
+  target_include_directories(${t} PRIVATE tests)
+  add_test(NAME ${t} COMMAND ${t})
+endforeach()
